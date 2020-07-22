@@ -1,11 +1,10 @@
 # ACI-AKS-VirtualNode
 Artefacts hosted in this repo are for the ACI integration with AKS.
----
 
 ## Prerequisites
 ---
 
-variables inputs for the POC
+Define the variables inputs for the POC, these 
 ```
 $rg="kube-aks-rg01"
 $vnetname="kube-vnet01"
@@ -15,6 +14,8 @@ $subnetagent="kube-subnet-agent01"
 $subnetnode="kube-subnet-node01"
 $subnetaci="kube-subnet-aci01"
 $akscluster="kube-private-cls"
+$winvm="kube-win-vm01"
+$winvmsku="Standard_DS2_v2"
 ```
 
 1. Create a Resource group
@@ -64,6 +65,17 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 
 > Private AKS Private DNS and Private endpoint are created with Private AKS managed service 
 
+
+5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
+``` 
+az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username azureadmin --admin-password "Password@123" --image $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
+Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/neilpeterson/nepeters-azure-templates/master/windows-custom-script-simple/support-scripts/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
+```
+> Password is provided the VM in the AZ CLI command, if requried please reset the password.
+Prep the VM with required toolsets such as az cli, kubectl etc.
+```
+
+```
 
 
 
