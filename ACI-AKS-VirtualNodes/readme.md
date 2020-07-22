@@ -69,10 +69,13 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
 ``` 
 az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username azureadmin --admin-password "Password@123" --image $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
-Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/neilpeterson/nepeters-azure-templates/master/windows-custom-script-simple/support-scripts/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
+```
+Prepare the windows VM with required toolsets such as az cli, kubectl etc.
+```
+Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
 ```
 > Password is provided the VM in the AZ CLI command, if requried please reset the password.
-Prep the VM with required toolsets such as az cli, kubectl etc.
+
 ```
 
 ```
