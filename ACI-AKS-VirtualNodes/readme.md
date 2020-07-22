@@ -2,9 +2,8 @@
 Artefacts hosted in this repo are for the ACI integration with AKS.
 
 ## Prerequisites
----
 
-Define the variables inputs for the POC, these 
+Define the variables inputs for the POC, these values can be changed however it may require minon PS code chanegs. 
 ```
 $rg="kube-aks-rg01"
 $vnetname="kube-vnet01"
@@ -16,6 +15,8 @@ $subnetaci="kube-subnet-aci01"
 $akscluster="kube-private-cls"
 $winvm="kube-win-vm01"
 $winvmsku="Standard_DS2_v2"
+$vmadmin="azureadmin"
+$vmpassword="Password@123"
 ```
 
 1. Create a Resource group
@@ -63,18 +64,19 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 ```
 > --node-vm-size switch can be used for the size of the nodes you want to use, which varies based on what you are using your cluster for and how much RAM/CPU each of your users need. By default Standard_DS2_v2 is selected.
 
-> Private AKS Private DNS and Private endpoint are created with Private AKS managed service 
+> Private AKS Private DNS and Private endpoint are created with Private AKS managed service.
 
 
 5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
 ``` 
-az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username azureadmin --admin-password "Password@123" --image $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
+az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username $vmadmin --admin-password $vmpassword --image $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
 Prepare the windows VM with required toolsets such as az cli, kubectl etc.
 ```
 Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
 ```
 > Password is provided the VM in the AZ CLI command, if requried please reset the password.
+> If you wishes to the change the user name then PS1 code requries a change for the certs copy to user profile. 
 
 ```
 
