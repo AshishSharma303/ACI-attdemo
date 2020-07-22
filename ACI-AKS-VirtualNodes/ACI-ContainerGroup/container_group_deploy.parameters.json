@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerGroupName": { "value": "c-group" },
+    "vnetName": { "value": "cgroup-vnet" },
+    "vnetAddressPrefix": { "value": "10.10.0.0/16" },
+    "subnetName": { "value": "cgroup-subnet" },
+    "subnetAddressPrefix": { "value": "10.10.10.0/24" },
+    "location": {"value": "eastus2" }
+  }
+}
