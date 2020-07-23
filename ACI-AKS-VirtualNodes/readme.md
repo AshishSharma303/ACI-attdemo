@@ -96,16 +96,70 @@ az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg 
 
 az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idpubfilepath -OutFile $id_pubPath"
 
+$kubectldir=";c:\users\"+$vmadmin + "\.azure-kubectl;"
 
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "mkdir $kubectldir"
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "[Environment]::SetEnvironmentVariable(\`"Path\`", $env:Path + \`"$($kubectldir)\`", \`"Machine\`")"
 
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "az aks install-cli"
 
 ```
 > Password is provided the VM in the AZ CLI command, if requried please reset the password.
 > If you wishes to the change the user name then PS1 code requries a change for the certs copy to user profile. 
 
+6. Log in the to the VM via RDP
+We created a windows VM for the AKS cluster managemnet, as private AKS cluster can not be connected from outside the VNet scope. This Vm has publci IP connectivity as it is not connected to Bastion network. RDP to the VM will be on public endpoint.
+Open windows PowerShell and execute the following Az Cli's for the cluster prepration and connectivity 
+
+validate Az cli is installed on the VM:
+```
+az cli --version
+```
+> Note: if AZ cli is not installed then run the install command: Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi
+
+Azure login:
+```
+az login
 ```
 
+Install kubectl on VM
 ```
+az aks install-cli
+$vmadmin="azureadmin"
+$kubectldir=";c:\users\"+$vmadmin + "\.azure-kubectl;"
+[Environment]::SetEnvironmentVariable("Path", $env:Path + $kubectldir, "Machine")
+```
+Restart the powershell to consume env variable 
+
+Prepare the variable sets in the virtual machine
+```
+$rg="kube-aks-rg01"
+$vnetname="kube-vnet01"
+$spname="spattakscls01"
+$subneting="kube-subnet-ing01"
+$subnetagent="kube-subnet-agent01"
+$subnetnode="kube-subnet-node01"
+$subnetaci="kube-subnet-aci01"
+$akscluster="kube-private-cls"
+$winvm="kube-win-vm01"
+$winvmsku="Standard_DS2_v2"
+$vmadmin="azureadmin"
+$vmpassword="Password@123"
+$vnetid=$(az network vnet show --resource-group $rg --name $vnetname --query id --output tsv)
+$subnetid=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetnode --query id --output tsv)
+$subnetidaci=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetaci --query id --output tsv)
+$subnetidagent=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetagent --query id --output tsv)
+```
+
+7. Connect to the private AKS cluster
+get the creds of AKS cluster
+```
+az aks get-credentials --name $akscluster --resource-group $rg --output table
+
+```
+
+
+
 
 
 
