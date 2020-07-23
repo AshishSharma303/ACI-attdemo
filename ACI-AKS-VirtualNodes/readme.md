@@ -1,8 +1,9 @@
 # ACI-AKS-VirtualNode
 Artefacts hosted in this repo are for the ACI integration with AKS.
 
-## Prerequisites
 
+## Prerequisites
+> Use Azure cloud PowerShell or though local machine connected to the azure subscription to run below AZ cli commands.
 Define the variables inputs for the POC, these values can be changed however it may require minon PS code chanegs. 
 ```
 $rg="kube-aks-rg01"
@@ -46,7 +47,7 @@ $subnetidagent=$(az network vnet subnet show --resource-group $rg --vnet-name $v
 
 
 3. Create a servie principal account for Private AKS deploymnet
-Use Azure cloud shell to run the below AZ cli commands:
+> Note: user must have permissions to build servie principal account on Azure AD.
 ```
 $sppassword=$(az ad sp create-for-rbac --name $spname --role Contributor --scope $VNET_ID --query password --output tsv)
 $httpspid="http://"+$spname
@@ -69,11 +70,35 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 
 5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
 ``` 
-az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username $vmadmin --admin-password $vmpassword --image $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
+az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
 Prepare the windows VM with required toolsets such as az cli, kubectl etc.
 ```
 Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
+
+or
+
+az vm extension set --resource-group $rg --vm-name $winvm --name "aksPrepToolsScript" --publisher Microsoft.Azure.Extensions --settings '{"fileUris": ["https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1"],"commandToExecute": "./aksPrepToolsScript.ps1"}'
+
+or
+
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi"
+
+$idrsafilepath="https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/Certs/id_rsa"
+$idpubfilepath="https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/Certs/id_rsa.pub"
+$sshdir="c:\users\"+$vmadmin + "\.ssh"
+$id_pubPath="c:\users\"+$vmadmin + "\.ssh" + "\id_rsa.pub"
+$id_privPath="c:\users\"+$vmadmin + "\.ssh" + "\id_rsa"
+
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "mkdir $sshdir"
+
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idrsafilepath -OutFile $id_privPath" 
+
+az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idpubfilepath -OutFile $id_pubPath"
+
+
+
+
 ```
 > Password is provided the VM in the AZ CLI command, if requried please reset the password.
 > If you wishes to the change the user name then PS1 code requries a change for the certs copy to user profile. 
