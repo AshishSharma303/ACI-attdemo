@@ -9,12 +9,11 @@
 This document illustrates how to use  secrets with Azure Container Instances using secure environment variables functionality.These can be added while ACI creation to decouple application code from passwords and secrets. Application Code can utilize these secrets by referring to these values.The secrets can pre exist in Key vault and TF code/pipelines can fetch secret and use it to create ACI with ENV variables or secret mount. However, this document does not covers the creation of YAML pipelines and Azure Key Vault.
 
 
-![test](/ACI-secretmgmt/secret-mount/aci-env.PNG)
+![test](/ACI-secretmgmt/env-variables/aci-env.PNG)
 
 ## Prerequisites
 > 1. Use Azure cloud PowerShell or though local machine connected to the azure subscription to run below AZ cli commands.
-> 2. Create a Key Vault and add two secrets  e.g. username and password
-> 3. Define the variables inputs for the POC, these values can be changed however it may require minon PS code chanegs. 
+> 2. Update the values for below variables as required 
 ```
 rg="aci-rg01"
 vnetname="aci-vnet01"
@@ -42,7 +41,7 @@ vnetid=$(az network vnet show --resource-group $rg --name $vnetname --query id -
 subnetid=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnet --query id --output tsv)
 
 ```
-3. Create ACI instance with secret mount
+3. Create ACI instance with secure environment variables
 
 ```
 az container create \
@@ -51,27 +50,30 @@ az container create \
     --location $location \
     --subnet $subnetid \
     --image mcr.microsoft.com/azuredocs/aci-helloworld \
-    --secrets username="myadminuser" password="123qwe,./" \
-    --secrets-mount-path /mnt/secrets
+    --secure-environment-variables username=admin password=123qwe,./
 
 ```
 
-4. Enter container instance bash shell
+4. Access secure env variables from container properties (values are not exposed here)
 
+```
+az container show --resource-group $rg --name $aciname --query 'containers[].environmentVariables'
+
+```
+5. Enter container bash shell
 ```
 az container exec \
   --resource-group $rg \
   --name $aciname --exec-command "/bin/sh"
 ```
 
-5. Validate the secrets
+6. Validate the secrets
 ```
-ls /mnt/secrets
-cat /mnt/secrets/username
-cat /mnt/secrets/password
+echo $username
+echo $password
 
 ```
-### Clean-up the resources
+7. Clean-up the resources
 ```
 az group delete -n $rg --yes
 

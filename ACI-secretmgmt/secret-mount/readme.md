@@ -13,8 +13,7 @@ This document illustrates how to use secrets with Azure Container Instances usin
 
 ## Prerequisites
 > 1. Use Azure cloud PowerShell or though local machine connected to the azure subscription to run below AZ cli commands.
-> 2. Create a Key Vault and add two secrets  e.g. username and password
-> 3. Define the variables inputs for the POC, these values can be changed however it may require minon PS code chanegs. 
+> 2. Update the values for below variables as required 
 ```
 rg="aci-rg01"
 vnetname="aci-vnet01"
@@ -71,7 +70,8 @@ cat /mnt/secrets/username
 cat /mnt/secrets/password
 
 ```
-### Clean-up the resources
+7. Clean-up the resources
+
 ```
 az group delete -n $rg --yes
 
