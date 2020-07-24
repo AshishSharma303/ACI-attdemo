@@ -4,7 +4,8 @@ Detailed procedure though AZ CLI commands to build the ACI virtual node integrat
   - [Enable_Virtual_Nodes_with_AKS_cluster](#Enable_Virtual_Nodes_with_AKS_cluster)
   - [Clean_up_the_resources](#Clean_up_the_resources)
 
-![test](/ACI-secretmgmt/secret-mount/aci_secret.PNG)
+![aciburst](/ACI-attdemo/images/aciburst.png)
+
 
 ## Prerequisites
 > Use Azure cloud PowerShell or through local machine connected to the azure subscription to run below AZ cli commands.
