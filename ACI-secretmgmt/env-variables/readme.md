@@ -1,4 +1,4 @@
-# ACI secret management with Secret Mount
+# ACI secret management with Secure Environment Vairables
 
 
 
@@ -6,10 +6,10 @@
 
 ## Introduction
 
-This document illustrates how to use secrets with Azure Container Instances using native ACI secret mount functionality.These can be added while ACI creation to decouple application code from passwords and secrets. Application Code can utilize these secrets by referring to these values.The secrets can pre exist in Key vault and TF code/pipelines can fetch secret and use it to create ACI with ENV variables or secret mount. However This document does not covers the creation of YAML pipelines and Azure Key Vault.
+This document illustrates how to use  secrets with Azure Container Instances using secure environment variables functionality.These can be added while ACI creation to decouple application code from passwords and secrets. Application Code can utilize these secrets by referring to these values.The secrets can pre exist in Key vault and TF code/pipelines can fetch secret and use it to create ACI with ENV variables or secret mount. However, this document does not covers the creation of YAML pipelines and Azure Key Vault.
 
 
-![test](/ACI-secretmgmt/secret-mount/aci_secret.PNG)
+![test](/ACI-secretmgmt/secret-mount/aci-env.PNG)
 
 ## Prerequisites
 > 1. Use Azure cloud PowerShell or though local machine connected to the azure subscription to run below AZ cli commands.
