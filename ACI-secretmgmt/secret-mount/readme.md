@@ -35,13 +35,13 @@ az network vnet create -g $rg -n $vnetname --address-prefixes 10.10.4.0/22
 az network vnet subnet create -g $rg --vnet-name $vnetname -n $subnet --address-prefix 10.10.4.0/24
 ```
 
-Get the VNet and subnet ID into a variable for future use:
+3. Get the VNet and subnet ID into a variable for future use:
 ```
 vnetid=$(az network vnet show --resource-group $rg --name $vnetname --query id --output tsv)
 subnetid=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnet --query id --output tsv)
 
 ```
-3. Create ACI instance with secret mount
+4. Create ACI instance with secret mount
 
 ```
 az container create \
@@ -55,7 +55,7 @@ az container create \
 
 ```
 
-4. Enter container instance bash shell
+5. Enter container instance bash shell
 
 ```
 az container exec \
@@ -63,7 +63,7 @@ az container exec \
   --name $aciname --exec-command "/bin/sh"
 ```
 
-5. Validate the secrets
+6. Validate the secrets
 ```
 ls /mnt/secrets
 cat /mnt/secrets/username
@@ -77,4 +77,9 @@ az group delete -n $rg --yes
 
 ```
 
+### NOTE
+Azure Container Instance supports Managed Service Identity which can be used to access Key Vault from container run time and fetch the secrets. However, this option is not recommended due to below reasons:
+
+1. Managed Service Identity is not supported with Azure Container Instances deployed invite virtual network.
+2. Azure Container Instance is not a trusted service for Key Vault.Hence it requires Key Vault firewall to be enabled.
 
