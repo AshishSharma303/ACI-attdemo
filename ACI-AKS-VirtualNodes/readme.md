@@ -75,6 +75,7 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 
 
 5. Build a window virtual machine in the VNet as private AKS cluster cannot be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for this windows vm deployment. 
+With windows VM we have the advantage of using it as admin server and client to access the web application hosted through the AKS PODS.   
 ``` 
 az vm create --resource-group $rg --name $winvm --image Win2019Datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
@@ -97,6 +98,12 @@ az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg 
 ```
 > Password is provided the VM in the AZ CLI command, if required please reset the password.
 > If you wish to the change the user name then PS1 code requires a change for the certs copy to user profile. 
+
+Below code can be used to build VM from exisiting images
+> New-AzVm -ResourceGroupName "myResourceGroup" -Name "myVMfromImage" -ImageName "myImage" -Location "East US" -VirtualNetworkName "myImageVnet" -SubnetName "myImageSubnet" -SecurityGroupName "myImageNSG" -PublicIpAddressName "myImagePIP" -OpenPorts 3389
+> az vm create --resource-group $sigResourceGroup --name aibImgVm001 --admin-username azureuser --location $location --image "/subscriptions/$subscriptionID/resourceGroups/$sigResourceGroup/providers/Microsoft.Compute/galleries/$sigName/images/$imageDefName/versions/latest" --generate-ssh-keys
+
+
 
 6. Log in the to the VM via RDP
 We created a windows VM for the AKS cluster management, as private AKS cluster cannot be connected from outside the VNet scope. This VM has public IP connectivity as it is not connected to Bastion network. RDP to the VM will be on public endpoint.
