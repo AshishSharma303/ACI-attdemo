@@ -1,10 +1,9 @@
 # ACI-AKS-VirtualNode
-Artefacts hosted in this repo are for the ACI integration with AKS.
-
+Detailed procedure though AZ CLI commands to build the ACI virtual node integration with private AKS cluster. You can use Cloud PowerShell or Windows PowerShell to execute AZ CLI commands.
 
 ## Prerequisites
-> Use Azure cloud PowerShell or though local machine connected to the azure subscription to run below AZ cli commands.
-Define the variables inputs for the POC, these values can be changed however it may require minon PS code chanegs. 
+> Use Azure cloud PowerShell or through local machine connected to the azure subscription to run below AZ cli commands.
+Defining the variables sets for the POC, these values can be changed however it may require minor PS1 code changes provided in the repo. 
 ```
 $rg="kube-aks-rg01"
 $vnetname="kube-vnet01"
@@ -34,7 +33,7 @@ az network vnet subnet create -g $RG --vnet-name $vnetname -n $subnetnode --addr
 az network vnet subnet create -g $RG --vnet-name $vnetname -n $subnetaci --address-prefix 10.10.7.64/26
 ```
 
-Get the VNet and subnet ID into a varibale for future use:
+Get the VNet and subnet ID into a variable for future use:
 ```
 $vnetid=$(az network vnet show --resource-group $rg --name $vnetname --query id --output tsv)
 $subnetid=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetnode --query id --output tsv)
@@ -46,7 +45,7 @@ $subnetidagent=$(az network vnet subnet show --resource-group $rg --vnet-name $v
 > If required, change the CIDR for VNet and subnets. 
 
 
-3. Create a servie principal account for Private AKS deploymnet
+3. Create a service principal account for Private AKS deployment
 > Note: user must have permissions to build servie principal account on Azure AD.
 ```
 $sppassword=$(az ad sp create-for-rbac --name $spname --role Contributor --scope $VNET_ID --query password --output tsv)
@@ -64,12 +63,12 @@ az role assignment create --assignee $spid --scope $vnetid --role Contributor
 
 az aks create --resource-group $rg --name $akscluster --load-balancer-sku standard --enable-private-cluster --network-plugin azure --vnet-subnet-id $subnetid --docker-bridge-address 172.17.0.1/16 --dns-service-ip 11.2.0.10 --service-cidr 11.2.0.0/24 --service-principal $spid --client-secret $sppassword --kubernetes-version 1.17.7 --node-count 2 --node-osdisk-size 90 --location eastus2 --vm-set-type VirtualMachineScaleSets --enable-cluster-autoscaler --min-count 2 --max-count 5
 ```
-> --node-vm-size switch can be used for the size of the nodes you want to use, which varies based on what you are using your cluster for and how much RAM/CPU each of your users need. By default Standard_DS2_v2 is selected.
+> --node-vm-size switch can be used for the size of the nodes you want to use, which varies based on what you are using your cluster for and how much RAM/CPU each of your users need. By default, Standard_DS2_v2 is selected.
 
 > Private AKS Private DNS and Private endpoint are created with Private AKS managed service.
 
 
-5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
+5. Build a window virtual machine in the VNet as private AKS cluster cannot be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for this windows vm deployment. 
 ``` 
 az vm create --resource-group $rg --name $winvm --image Win2019Datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
@@ -90,12 +89,12 @@ az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg 
 az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idpubfilepath -OutFile $id_pubPath"
 
 ```
-> Password is provided the VM in the AZ CLI command, if requried please reset the password.
-> If you wishes to the change the user name then PS1 code requries a change for the certs copy to user profile. 
+> Password is provided the VM in the AZ CLI command, if required please reset the password.
+> If you wish to the change the user name then PS1 code requires a change for the certs copy to user profile. 
 
 6. Log in the to the VM via RDP
-We created a windows VM for the AKS cluster managemnet, as private AKS cluster can not be connected from outside the VNet scope. This Vm has publci IP connectivity as it is not connected to Bastion network. RDP to the VM will be on public endpoint.
-Open windows PowerShell and execute the following Az Cli's for the cluster prepration and connectivity 
+We created a windows VM for the AKS cluster management, as private AKS cluster cannot be connected from outside the VNet scope. This VM has public IP connectivity as it is not connected to Bastion network. RDP to the VM will be on public endpoint.
+Open windows PowerShell and execute the following Az Cli's for the cluster preparation and connectivity 
 
 validate Az cli is installed on the VM:
 ```
@@ -152,7 +151,7 @@ kubectl.exe get pods -A
 
 
 ## Enable Virtual Nodes with AKS cluster
-The virtual nodes are configured to use a seprate virtual network subnet. ACI subnet must have the delegated permissions to connect Azure resources between the AKS cluster. All of the commands are executed from the windows RDP server we buidl above in the Virtual Network. 
+The virtual nodes are configured to use a separate virtual network subnet. ACI subnet must have the delegated permissions to connect Azure resources between the AKS cluster. All of the commands are executed from the windows RDP server we build above in the Virtual Network. 
 
 1. Enable the addons procedure is provided below:
 ```
@@ -172,7 +171,7 @@ az container list --resource-group $rg --output table
 
 az aks enable-addons --resource-group $rg --name $akscluster --addons virtual-node --subnet-name $subnetaci
 ```
-> Note: Please record the password of the SP, as it can not be found again.
+> Note: Please record the password of the SP, as it cannot be found again.
 > Known limitation with ACI virtual nodes: https://docs.microsoft.com/en-us/azure/aks/virtual-nodes-portal#known-limitations
 
 3. valiate if the virtual nodes are attached and visible
@@ -181,7 +180,7 @@ az aks get nodes
 ```
 
 4. Deploy and configure ACR
-Create ACR with public endpoint as Containr Instance managed service does not integrated with private EP enabled ACR.
+Create ACR with public endpoint as Container Instance managed service does not integrated with private EP enabled ACR.
 And Enable Admin user and password from portal on ACR, properties of the ACR resource, Access keys enable Admin User.
 ```
 az acr create --resource-group $rg --name $acrname --sku Standard --location eastus2 --admin-enabled true --public-network-enabled true
@@ -239,7 +238,7 @@ Its an internal cert, web page will give cert error "we can ignore it"
 7. Optional step to build the Docker image on your own
 ```
 #----Optional Code for the Docker Build-------#
-If applicariton team wants to build the docker file from scrach then, applicaiton code needs to be changed to point to the new PaaS service.
+If application team wants to build the docker file from scratch then, application code needs to be changed to point to the new PaaS service.
 Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
 Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
     - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL
@@ -252,6 +251,7 @@ Application code and DockerFile is provided under Git repo: https://github.com/A
     - Save the Dockerfile & use docker build . -t <Imagetag>
 # ----Optional Code for the Docker Build END------#
 ```
+
 
 ### Clean-up the resources
 ```
