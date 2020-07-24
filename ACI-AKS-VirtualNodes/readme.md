@@ -52,16 +52,17 @@ $subnetidagent=$(az network vnet subnet show --resource-group $rg --vnet-name $v
 $sppassword=$(az ad sp create-for-rbac --name $spname --role Contributor --scope $VNET_ID --query password --output tsv)
 $httpspid="http://"+$spname
 $spid=$(az ad sp show --id $httpspid --query appId --output tsv)
-
 ```
+> Record the SP ID and SP Password for future usage.
 
 4. Deploy the private AKS cluster
 
 ```
-$sshkey="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDMHllCBW7IyUNZmREKYZ+4hN0jQDvXddZaTMEty7NUyFyNhKuIbPzuxE6qFdn8Taf4KI0VRAe/4/7+P2GdZHDeNDQqYYq0iS+6jcMkRmvOik4+iLkJo/NE6Ek8oFCWfW7hkbdpZ14zr0we1A9aOGWAlDLGV52qDhbZPmJ0NDjldIzTnhWRSJJbGrIGBJNGfd3JbS3HrpqKmi6nGxnK++SYNlkRWiLbpSsU7oCcYlEz/S8m6f7etd8qxi9yL+zdbqCjw0bdCwK8pHcNoEDaQkvAxKCnHCJ7ls5GTMHwtK6g8OHX0tCcEx6wHOoKjBuDJsupBx1bONcl0xhS9Neu5mLF ashis@microsoft.com"
 az extension add --name aks-preview
 az extension update --name aks-preview
-az aks create --resource-group $rg --name $akscluster --load-balancer-sku standard --enable-private-cluster --network-plugin azure --vnet-subnet-id $subnetid --docker-bridge-address 172.17.0.1/16 --dns-service-ip 11.2.0.10 --service-cidr 11.2.0.0/24 --service-principal $spid --client-secret $sppassword --kubernetes-version 1.17.7 --ssh-key-value $sshkey --node-count 2 --node-osdisk-size 90 --location eastus2 --vm-set-type VirtualMachineScaleSets --enable-cluster-autoscaler --min-count 2 --max-count 5
+az role assignment create --assignee $spid --scope $vnetid --role Contributor
+
+az aks create --resource-group $rg --name $akscluster --load-balancer-sku standard --enable-private-cluster --network-plugin azure --vnet-subnet-id $subnetid --docker-bridge-address 172.17.0.1/16 --dns-service-ip 11.2.0.10 --service-cidr 11.2.0.0/24 --service-principal $spid --client-secret $sppassword --kubernetes-version 1.17.7 --node-count 2 --node-osdisk-size 90 --location eastus2 --vm-set-type VirtualMachineScaleSets --enable-cluster-autoscaler --min-count 2 --max-count 5
 ```
 > --node-vm-size switch can be used for the size of the nodes you want to use, which varies based on what you are using your cluster for and how much RAM/CPU each of your users need. By default Standard_DS2_v2 is selected.
 
@@ -70,18 +71,10 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 
 5. Build a windows virtual manchine in the VNet as private AKS cluster can not be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for the this windows vm deployment. 
 ``` 
-az vm create --resource-group $rg --name $winvm --image win2016datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
+az vm create --resource-group $rg --name $winvm --image Win2019Datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
 Prepare the windows VM with required toolsets such as az cli, kubectl etc.
 ```
-Set-AzVMCustomScriptExtension -ResourceGroupName $rg -VMName $winvm -Name "aksPrepToolsScript" -FileUri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1" -Run "aksPrepToolsScript.ps1" -Location "eastus2"
-
-or
-
-az vm extension set --resource-group $rg --vm-name $winvm --name "aksPrepToolsScript" --publisher Microsoft.Azure.Extensions --settings '{"fileUris": ["https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/winVmPrepScript/aksPrepToolsScript.ps1"],"commandToExecute": "./aksPrepToolsScript.ps1"}'
-
-or
-
 az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'; rm .\AzureCLI.msi"
 
 $idrsafilepath="https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/Certs/id_rsa"
@@ -95,13 +88,6 @@ az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg 
 az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idrsafilepath -OutFile $id_privPath" 
 
 az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "Invoke-WebRequest -Uri $idpubfilepath -OutFile $id_pubPath"
-
-$kubectldir=";c:\users\"+$vmadmin + "\.azure-kubectl;"
-
-az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "mkdir $kubectldir"
-az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "[Environment]::SetEnvironmentVariable(\`"Path\`", $env:Path + \`"$($kubectldir)\`", \`"Machine\`")"
-
-az vm run-command invoke  --command-id RunPowerShellScript --name $winvm -g $rg --scripts "az aks install-cli"
 
 ```
 > Password is provided the VM in the AZ CLI command, if requried please reset the password.
@@ -126,10 +112,11 @@ Install kubectl on VM
 ```
 az aks install-cli
 $vmadmin="azureadmin"
-$kubectldir=";c:\users\"+$vmadmin + "\.azure-kubectl;"
+$hostname=hostname
+$kubectldir=";c:\users\"+$vmadmin + "." + $hostname + "\.azure-kubectl;"
 [Environment]::SetEnvironmentVariable("Path", $env:Path + $kubectldir, "Machine")
 ```
-Restart the powershell to consume env variable 
+> Note: Restart the powershell to consume env variable 
 
 Prepare the variable sets in the virtual machine
 ```
@@ -145,24 +132,75 @@ $winvm="kube-win-vm01"
 $winvmsku="Standard_DS2_v2"
 $vmadmin="azureadmin"
 $vmpassword="Password@123"
+$acrname="kubepubacr01"
 $vnetid=$(az network vnet show --resource-group $rg --name $vnetname --query id --output tsv)
 $subnetid=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetnode --query id --output tsv)
 $subnetidaci=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetaci --query id --output tsv)
 $subnetidagent=$(az network vnet subnet show --resource-group $rg --vnet-name $vnetname --name $subnetagent --query id --output tsv)
+
 ```
 
 7. Connect to the private AKS cluster
 get the creds of AKS cluster
 ```
 az aks get-credentials --name $akscluster --resource-group $rg --output table
-
+kubectl.exe get nodes
+kubectl.exe get pods -A
 ```
 
 
+## Enable Virtual Nodes with AKS cluster
+The virtual nodes are configured to use a seprate virtual network subnet. ACI subnet must have the delegated permissions to connect Azure resources between the AKS cluster. All of the commands are executed from the windows RDP server we buidl above in the Virtual Network. 
 
+1. Enable the addons procedure is provided below:
+```
+az provider register --namespace Microsoft.ContainerInstance
+```
+> The Microsoft.ContainerInstance provider should report as Registered
 
+2. Enable virtual nodes, via using the az aks enable-addons command.
+```
+$httpspid="http://"+$spname
+$spid=$(az ad sp show --id $httpspid --query appId --output tsv)
+Optional: $sppassword=$(az ad sp credential reset --name $spid --query password -o tsv)
+Optional: az network vnet subnet update --resource-group $rg --name $subnetaci --vnet-name $vnetname --delegations Microsoft.ContainerInstance/containerGroups
 
+az container create --resource-group $rg --name initacicontainer101 --image mcr.microsoft.com/azuredocs/aci-helloworld --dns-name-label initacilable101 --ports 80
+az container list --resource-group $rg --output table
 
+az aks enable-addons --resource-group $rg --name $akscluster --addons virtual-node --subnet-name $subnetaci
+```
+> Note: Please record the password of the SP, as it can not be found again.
+> Known limitation with ACI virtual nodes: https://docs.microsoft.com/en-us/azure/aks/virtual-nodes-portal#known-limitations
 
+3. valiate if the virtual nodes are attached and visible
+```
+az aks get nodes
+```
+
+4. Deploy and configure ACR
+Create ACR with public endpoint as Containr Instance managed service does not integrated with private EP enabled ACR.
+And Enable Admin user and password from portal on ACR, properties of the ACR resource, Access keys enable Admin User.
+```
+az acr create --resource-group $rg --name $acrname --sku Standard --location eastus2 --admin-enabled true --public-network-enabled true
+$acrpassword=az acr credential show -n $acrname --query passwords[0].value --output table -o tsv
+$acrusername=az acr credential show -n $acrname --query username --output table -o tsv
+az acr login --name $acrname
+```
+
+5. Test the ACR
+An image is ready in MSFT Azure registry, the below code tests "pull and push" to the new newly created ACR. 
+```
+$msftusername="kubeacr01"
+$msftpassword="f+tnktj6xjBun8YAlWn1SJowTp510CQT"
+az acr login --name $msftusername --username $msftusername --password $msftpassword
+az acr import --name $acrname --source kubeacr01.azurecr.io/attdemo.azure.com:13Jul20 -u $msftusername -p $msftpassword
+```
+
+### Clean-up the resources
+```
+az container delete --resource-group myResourceGroup --name initacicontainer101
+
+```
 
 
