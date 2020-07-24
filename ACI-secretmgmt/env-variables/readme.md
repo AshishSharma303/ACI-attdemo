@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This document illustrates how to use  secrets with Azure Container Instances using secure environment variables functionality.These can be added while ACI creation to decouple application code from passwords and secrets. Application Code can utilize these secrets by referring to these values.The secrets can pre exist in Key vault and TF code/pipelines can fetch secret and use it to create ACI with ENV variables or secret mount. However, this document does not covers the creation of YAML pipelines and Azure Key Vault.
+This document illustrates how to use  secrets with Azure Container Instances using secure environment variables functionality. These can be added while ACI creation to decouple application code from passwords and secrets. Application Code can utilize these secrets by referring to these values.The secrets can pre exist in Key vault and TF code/pipelines can fetch secret and use it to create ACI with ENV variables or secret mount. However, this document does not covers the creation of YAML pipelines and Azure Key Vault.
 
 
 ![test](/ACI-secretmgmt/env-variables/aci-env.PNG)
@@ -84,5 +84,5 @@ az group delete -n $rg --yes
 ### NOTE
 Azure Container Instance supports Managed Service Identity which can be used to access Key Vault from container run time and fetch the secrets. However, this option is not recommended due to below reasons:
 
-1. Managed Service Identity is not supported with Azure Container Instances deployed invite virtual network.
+1. Managed Service Identity is not supported with Azure Container Instances deployed inside virtual network.
 2. Azure Container Instance is not a trusted service for Key Vault.Hence it requires Key Vault firewall to be enabled.
