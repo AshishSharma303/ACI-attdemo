@@ -4,7 +4,7 @@ Detailed procedure though AZ CLI commands to build the ACI virtual node integrat
   - [Enable_Virtual_Nodes_with_AKS_cluster](#Enable_Virtual_Nodes_with_AKS_cluster)
   - [Clean_up_the_resources](#Clean_up_the_resources)
 
-![aciburst](/ACI-attdemo/images/aciburst.png)
+![aciburst](/images/aciburst.png)
 
 
 ## Prerequisites
