@@ -247,7 +247,9 @@ Its an internal cert, web page will give cert error "we can ignore it"
 If application team wants to build the docker file from scratch then, application code needs to be changed to point to the new PaaS service.
 Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
 Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
-    - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL
+    - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL "Sample AZ code is provided below:"
+        az mariadb db create -g $rg -s <<uniqueServerName>> -n testdb
+        az mariadb server firewall-rule create -g $rg -s <<uniqueServerName>> -n allowip --start-ip-address <<-->> --end-ip-address <<-->>
     - Change the network settings of PaaSDB have to allow network settings & give access to VNET which is going to host the AKS and ACI instances. 
     - Unzip tar.gz file
     - Edit the application code file & edit the database connectivity so that application can connect to New PaasDB .
@@ -261,8 +263,8 @@ Application code and DockerFile is provided under Git repo: https://github.com/A
 
 ## Clean_up_the_resources
 ```
-az container delete --resource-group myResourceGroup --name initacicontainer101
-
+az group delete -n $rg --yes
+> get the name of MC RG from portal and delete the resource group built for AKS nodes.
 ```
 
 
