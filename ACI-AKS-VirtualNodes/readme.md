@@ -2,7 +2,7 @@
 Detailed procedure though AZ CLI commands to build the ACI virtual node integration with private AKS cluster. You can use Cloud PowerShell or Windows PowerShell to execute AZ CLI commands.
   - [Prerequisites](#prerequisites)
   - [Enable_Virtual_Nodes_with_AKS_cluster](#Enable Virtual Nodes with AKS cluster)
-  - [Clean_up_the_resources](#Clean-up the resources)
+  - [Clean_up_the_resources](#Clean_up_the_resources)
 
 ## Prerequisites
 > Use Azure cloud PowerShell or through local machine connected to the azure subscription to run below AZ cli commands.
@@ -256,7 +256,7 @@ Application code and DockerFile is provided under Git repo: https://github.com/A
 ```
 
 
-## Clean-up the resources
+## Clean_up_the_resources
 ```
 az container delete --resource-group myResourceGroup --name initacicontainer101
 
