@@ -202,7 +202,7 @@ An image is ready in MSFT Azure registry, the below code tests "pull and push" t
 $msftusername="kubeacr01"
 $msftpassword="f+tnktj6xjBun8YAlWn1SJowTp510CQT"
 az acr login --name $msftusername --username $msftusername --password $msftpassword
-az acr import --name $acrname --source kubeacr01.azurecr.io/attdemo.azure.com:13Jul20 -u $msftusername -p $msftpassword
+az acr import --name $acrname --source kubeacr01.azurecr.io/23july2020:latest -u $msftusername -p $msftpassword
 ```
 
 6. YAML executions with AKS-ACI virtual kubenet 
@@ -218,9 +218,10 @@ kubectl create secret docker-registry acr-cred --docker-server=$acrname --docker
 ```
 
 Deploy the application deployment and service YAML files, namespace is defined in YAML as attdemo (if required please change)
-> Note: Edit the yaml file and point it to your image repository. 
+
 ```
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/applicationCode/yamlAndDockerfile/aks-aci-attdemo.yaml" -OutFile aks-aci-attdemo.yaml
+**Note:** Edit the yaml file and point it to your image repository. 
 kubectl apply -f aks-aci-attdemo.yaml
 Kubectl get pods -n attdemo
 ```
@@ -229,7 +230,11 @@ Burst test: change the deployment replica (for example 1 to 5) in the deployment
 ```
 kubectl apply -f aks-aci-attdemo.yaml
 Kubectl get pods -n attdemo
+kubectl get svc -n attdemo
 ```
+valdiate if the applicaiton is working though the LB service IP we just created though YAML.
+https://IP address of the service:8000
+Its an internal cert, web page will give cert error "we can ignore it" 
 
 7. Optional step to build the Docker image on your own
 ```
