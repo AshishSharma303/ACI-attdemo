@@ -197,6 +197,44 @@ az acr login --name $msftusername --username $msftusername --password $msftpassw
 az acr import --name $acrname --source kubeacr01.azurecr.io/attdemo.azure.com:13Jul20 -u $msftusername -p $msftpassword
 ```
 
+6. YAML executions with AKS-ACI virtual kubenet 
+create secret object for ACR, ACR is enabled with admin user name and password
+```
+kubectl create secret docker-registry acr-cred --docker-server=<<ACR name>>.azurecr.io --docker-username=<<ACR name>> --docker-password=<<ACR admin password>> --docker-email=<<e-mail>> -n attdemo
+```
+Build the namespace in AKS cluster, in this example namespace name is taken as "attdemo". Same name is used in the application deployment + service YAML's
+```
+kubectl create ns attdemo
+```
+Deploy the application deployment and service YAML files, namespace is defined in YAML as attdemo (if required please change)
+```
+kubectl apply -f  <<deployment file path>> 
+Kubectl get pods -n attdemo
+```
+
+Burst test: change the deployment replica (for example 1 to 5) in the deployment YAML and verify the deployment and aks-burst with AKS
+```
+kubectl apply -f  <<deployment file path>> 
+Kubectl get pods -n attdemo
+```
+
+7. Optional step to build the Docker image on your own
+```
+#----Optional Code for the Docker Build-------#
+If applicariton team wants to build the docker file from scrach then, applicaiton code needs to be changed to point to the new PaaS service.
+Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
+Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
+    - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL
+    - Change the network settings of PaaSDB have to allow network settings & give access to VNET which is going to host the AKS and ACI instances. 
+    - Unzip tar.gz file
+    - Edit the application code file & edit the database connectivity so that application can connect to New PaasDB .
+    - It would look like as below
+    host: "<dbname>.<type>.database.azure.com", user: "{your_username}", password: {your_password}, database: {your_database}
+    - Save the file.
+    - Save the Dockerfile & use docker build . -t <Imagetag>
+# ----Optional Code for the Docker Build END------#
+```
+
 ### Clean-up the resources
 ```
 az container delete --resource-group myResourceGroup --name initacicontainer101
