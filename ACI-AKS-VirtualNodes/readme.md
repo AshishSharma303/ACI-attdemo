@@ -108,15 +108,17 @@ Azure login:
 az login
 ```
 
-Install kubectl on VM
+Install kubectl and containers windows feature on windows server 2019 VM
 ```
 az aks install-cli
 $vmadmin="azureadmin"
 $hostname=hostname
 $kubectldir=";c:\users\"+$vmadmin + "." + $hostname + "\.azure-kubectl;"
 [Environment]::SetEnvironmentVariable("Path", $env:Path + $kubectldir, "Machine")
+
+Install-WindowsFeature -Name Containers
 ```
-> Note: Restart the powershell to consume env variable 
+> Note: Restart the the server after installing the windows feature. 
 
 Prepare the variable sets in the virtual machine
 ```
@@ -183,9 +185,15 @@ Create ACR with public endpoint as Containr Instance managed service does not in
 And Enable Admin user and password from portal on ACR, properties of the ACR resource, Access keys enable Admin User.
 ```
 az acr create --resource-group $rg --name $acrname --sku Standard --location eastus2 --admin-enabled true --public-network-enabled true
+Install-Module -Name DockerMsftProvider -Repository PSGallery -Force
+Install-Package -Name docker -ProviderName DockerMsftProvider -Force -RequiredVersion 19.03
+$dockerPath=";C:\Program Files\Docker;"
+[Environment]::SetEnvironmentVariable("Path", $env:Path + $dockerPath, "Machine")
+Start-Service docker | Set-Service -StartupType Automatic
+
 $acrpassword=az acr credential show -n $acrname --query passwords[0].value --output table -o tsv
 $acrusername=az acr credential show -n $acrname --query username --output table -o tsv
-az acr login --name $acrname
+az acr login --name $acrname --username $acrusername --password $acrpassword
 ```
 
 5. Test the ACR
@@ -198,23 +206,28 @@ az acr import --name $acrname --source kubeacr01.azurecr.io/attdemo.azure.com:13
 ```
 
 6. YAML executions with AKS-ACI virtual kubenet 
-create secret object for ACR, ACR is enabled with admin user name and password
-```
-kubectl create secret docker-registry acr-cred --docker-server=<<ACR name>>.azurecr.io --docker-username=<<ACR name>> --docker-password=<<ACR admin password>> --docker-email=<<e-mail>> -n attdemo
-```
 Build the namespace in AKS cluster, in this example namespace name is taken as "attdemo". Same name is used in the application deployment + service YAML's
 ```
 kubectl create ns attdemo
 ```
-Deploy the application deployment and service YAML files, namespace is defined in YAML as attdemo (if required please change)
+
+create secret object for ACR, ACR is enabled with admin user name and password
 ```
-kubectl apply -f  <<deployment file path>> 
+$acrname=$acrname + ".azurecr.io"
+kubectl create secret docker-registry acr-cred --docker-server=$acrname --docker-username=$acrusername --docker-password=$acrpassword --docker-email=admin@attdemo.azure.com -n attdemo
+```
+
+Deploy the application deployment and service YAML files, namespace is defined in YAML as attdemo (if required please change)
+> Note: Edit the yaml file and point it to your image repository. 
+```
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AshishSharma303/ACI-attdemo/master/ACI-AKS-VirtualNodes/applicationCode/yamlAndDockerfile/aks-aci-attdemo.yaml" -OutFile aks-aci-attdemo.yaml
+kubectl apply -f aks-aci-attdemo.yaml
 Kubectl get pods -n attdemo
 ```
 
 Burst test: change the deployment replica (for example 1 to 5) in the deployment YAML and verify the deployment and aks-burst with AKS
 ```
-kubectl apply -f  <<deployment file path>> 
+kubectl apply -f aks-aci-attdemo.yaml
 Kubectl get pods -n attdemo
 ```
 
