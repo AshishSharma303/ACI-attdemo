@@ -1,5 +1,7 @@
 # ACI secret management with Secret Mount
-Artefacts hosted in this repo are for the ACI integration with AKS.
+
+
+![test](/ACI-secretmgmt/secret-mount/aci_secret.PNG)
 
 
 
