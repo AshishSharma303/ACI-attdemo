@@ -1,0 +1,22 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: aks-aci-attdemo-ing
+  namespace: attdemo
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  tls:
+  - hosts:
+    - attdemo.azure.com
+    secretName: attdemo-ingress-tls-be
+  rules:
+  - host: attdemo.azure.com
+    http:
+      paths:
+      - backend:
+          serviceName: aks-aci-attdemo-svc
+          servicePort: 8000
+        path: /
+    

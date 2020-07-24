@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks-aci-attdemo
+  namespace: attdemo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aks-aci-attdemo
+  template:
+    metadata:
+      labels:
+        app: aks-aci-attdemo
+    spec:
+      containers:
+      - name: aks-aci-attdemo
+        resources:
+            requests:
+              memory: 1G
+              cpu: 1
+        image: kubeacr01.azurecr.io/attdemo.azure.com:13Jul20
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: acr-cred
+      nodeSelector:
+        kubernetes.io/role: agent
+        beta.kubernetes.io/os: linux
+        type: virtual-kubelet
+      tolerations:
+      - key: virtual-kubelet.io/provider
+        operator: Exists
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: aks-aci-attdemo-svc
+  namespace: attdemo
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: https
+    protocol: TCP
+    port: 8000
+    targetPort: 8080
+  selector:
+    app: aks-aci-attdemo
