@@ -8,7 +8,8 @@ Detailed procedure though AZ CLI commands to build the ACI virtual node integrat
 
 
 ## Prerequisites
-> Use Azure cloud PowerShell or through local machine connected to the azure subscription to run below AZ cli commands.
+> 1. Use Azure portal cloud PowerShell or use local machine PowerSell connected to the azure subscription to run below AZ cli commands.
+> 2. Account must have permissions to build a Service principal or already created SP can be used to build AKS cluster.
 Defining the variables sets for the POC, these values can be changed however it may require minor PS1 code changes provided in the repo. 
 ```
 $rg="kube-aks-rg01"
@@ -75,7 +76,7 @@ az aks create --resource-group $rg --name $akscluster --load-balancer-sku standa
 
 
 5. Build a window virtual machine in the VNet as private AKS cluster cannot be accessed from outside of the virtual network. we will use the kube-subnet-agent01 subnet for this windows vm deployment. 
-With windows VM we have the advantage of using it as admin server and client to access the web application hosted through the AKS PODS.   
+> Why windows VM?: with windows VM its an advantage of using it as admin server to manage th cluster and as client to access the web application hosted through the AKS PODS.   
 ``` 
 az vm create --resource-group $rg --name $winvm --image Win2019Datacenter --admin-username $vmadmin --admin-password $vmpassword --size $winvmsku --subnet $subnetidagent --public-ip-address-dns-name "winvmakspublicip"
 ```
@@ -255,8 +256,34 @@ If application team wants to build the docker file from scratch then, applicatio
 Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
 Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
     - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL "Sample AZ code is provided below:"
-        az mariadb db create -g $rg -s <<uniqueServerName>> -n testdb
-        az mariadb server firewall-rule create -g $rg -s <<uniqueServerName>> -n allowip --start-ip-address <<-->> --end-ip-address <<-->>
+        A server name maps to a DNS name and must be globally unique in Azure. Substitute <server_admin_password> with your own server admin password.
+        $rg="kube-rg01"
+        $admin="myadmin"
+        $maripassword="Password@123" 
+        $mariadbname="myfirstmariadb"
+        $mariadbserver=$mariadbname + ".mariadb.database.azure.com"
+        $adminserver=$admin + "@" + "$mariadbname"
+
+        az mariadb server create --resource-group $rg --name $mariadbname --location eastus2 --admin-user $admin --admin-password $maripassword --sku-name GP_Gen5_2 --version 10.2
+        az mariadb server show --resource-group $rg --name $mariadbname
+
+        Keep the firewall open for all public EP's as this only the POC pourpose, delete the DB once POC is done:
+        ​az mariadb server update --resource-group $rg --name $mariadbname --ssl-enforcement Disabled
+        az mariadb server firewall-rule create --resource-group $rg --server $mariadbname --name AllowMyIP --start-ip-address 192.168.0.1 --end-ip-address 192.168.0.1
+
+        Connect to the server:
+        $mariadbserver=$mariadbname + ".mariadb.database.azure.com"
+        $admin=$admin + "@" + "$mariadbname"
+        mysql -h $mariadbserver -u $adminserver -p
+
+        View the server status at the mysql> prompt and build databases:
+        mysql> status
+        mysql> CREATE DATABASE sampledb;
+        mysql> USE sampledb;
+        mysql> CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);
+        INSERT INTO inventory (id, name, quantity) VALUES (1, 'banana', 150); 
+        INSERT INTO inventory (id, name, quantity) VALUES (2, 'orange', 154);
+        SELECT * FROM inventory;
     - Change the network settings of PaaSDB have to allow network settings & give access to VNET which is going to host the AKS and ACI instances. 
     - Unzip tar.gz file
     - Edit the application code file & edit the database connectivity so that application can connect to New PaasDB .
