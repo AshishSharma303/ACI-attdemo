@@ -272,8 +272,6 @@ Application code and DockerFile is provided under Git repo: https://github.com/A
         az mariadb server firewall-rule create --resource-group $rg --server $mariadbname --name AllowMyIP --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 
         Connect to the server:
-        $mariadbserver=$mariadbname + ".mariadb.database.azure.com"
-        $admin=$admin + "@" + "$mariadbname"
         mysql -h $mariadbserver -u $adminserver -p
 
         View the server status at the mysql> prompt and build databases:
