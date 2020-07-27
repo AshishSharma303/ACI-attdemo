@@ -7,4 +7,7 @@ Azure container instance POC agenda:
 -   ACI-WithAzFiles: ACI instance Persitant storage connectivity.
 -   ACI-secretmgmt: ACI instance secret management.
 
-Each of the repo folder contains a detailed prodecure guidence to build the respective ACI resources and execution of the applciaiton.   
+Each of the repo folder contains a detailed prodecure guidence to build the respective ACI resources and execution of the applciaiton.
+
+> Disclaimer: there are few passwords given in the document, these passwords are solely intended for the POC pourpose only. These documents do not contain any confidential information or data.
+
