@@ -252,9 +252,8 @@ Its an internal cert, web page will give cert error "we can ignore it"
 7. Optional step to build the Docker image on your own
 ```
 #----Optional Code for the Docker Build, Azure PaaS DB-------#
-If application team wants to build the docker file from scratch then, application code needs to be changed to point to the new PaaS service.
-Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
-Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
+Application team can consume the exisitng image file and with following commands app team can test the sql connectivity with PaaS DB. 
+Application runtime code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
     - Build the Azure PaaS DB: A new PaaSDB of kind MYSQL "Sample AZ code is provided below:"
         A server name maps to a DNS name and must be globally unique in Azure. Substitute <server_admin_password> with your own server admin password.
         $rg="kube-rg01"
