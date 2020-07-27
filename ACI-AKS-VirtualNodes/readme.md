@@ -251,7 +251,7 @@ Its an internal cert, web page will give cert error "we can ignore it"
 
 7. Optional step to build the Docker image on your own
 ```
-#----Optional Code for the Docker Build-------#
+#----Optional Code for the Docker Build, Azure PaaS DB-------#
 If application team wants to build the docker file from scratch then, application code needs to be changed to point to the new PaaS service.
 Below provided steps should be performed on Linux virtual machine, where Docker engine is installed.
 Application code and DockerFile is provided under Git repo: https://github.com/AshishSharma303/ACI-attdemo/tree/master/ACI-AKS-VirtualNodes/applicationCode  
@@ -267,9 +267,9 @@ Application code and DockerFile is provided under Git repo: https://github.com/A
         az mariadb server create --resource-group $rg --name $mariadbname --location eastus2 --admin-user $admin --admin-password $maripassword --sku-name GP_Gen5_2 --version 10.2
         az mariadb server show --resource-group $rg --name $mariadbname
 
-        Keep the firewall open for all public EP's as this only the POC pourpose, delete the DB once POC is done:
+        # Keep the firewall open for all public EP's as this only the POC pourpose, delete the DB once POC is done, in real world scenario only VNET access is allowed (https://docs.microsoft.com/en-us/rest/api/sql/firewallrules/createorupdate):
         ​az mariadb server update --resource-group $rg --name $mariadbname --ssl-enforcement Disabled
-        az mariadb server firewall-rule create --resource-group $rg --server $mariadbname --name AllowMyIP --start-ip-address 192.168.0.1 --end-ip-address 192.168.0.1
+        az mariadb server firewall-rule create --resource-group $rg --server $mariadbname --name AllowMyIP --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 
         Connect to the server:
         $mariadbserver=$mariadbname + ".mariadb.database.azure.com"
